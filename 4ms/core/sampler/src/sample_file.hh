@@ -28,7 +28,6 @@
 
 #pragma once
 #include "elements.hh"
-#include "ff.h"
 #include "sample_type.hh"
 #include "sdcard.hh"
 #include <array>
