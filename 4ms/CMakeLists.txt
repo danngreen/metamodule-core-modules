@@ -49,15 +49,21 @@ target_include_directories(CoreModules-4ms PUBLIC
 	core/tapo/
 	core/alpaca/include
 	core/looping-delay/src
+	core/sampler/src
+	core/sampler/mocks
 	core/
 	core/peg-common/
 	core/peg-common/mocks
+    ${FWDIR}/src/vcv_hardware
+    ${FWDIR}/lib/fatfs/source
+    ${FWDIR}/src/fs/fatfs
 )
 
 
 target_compile_definitions(CoreModules-4ms PRIVATE 
 	TEST     
 	SAMPLE_RATE=48000
+    METAMODULE
 )
 
 target_compile_options(CoreModules-4ms PRIVATE
