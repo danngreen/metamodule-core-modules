@@ -1,21 +1,28 @@
 #pragma once
 #include "CoreModules/fs_access.hh"
-#include "elements.hh"
 #include "str_util.h"
 #include <string_view>
 
 namespace SamplerKit
 {
 
+#ifdef METAMODULE
+using DIR = MetaModule::Dir;
+using FIL = MetaModule::File;
+using FILINFO = MetaModule::Fileinfo;
+#endif
+
 struct Sdcard : MetaModule::FS {
+
 	constexpr static std::string_view SYS_DIR = "_STS.system";
 	constexpr static std::string_view SYS_DIR_SLASH = "_STS.system/";
+	constexpr static std::string_view SAMPLE_INDEX_FILE_PATH = "_STS.system/sample_index.dat";
 
 	enum INIT_FIND_ALPHA_ACTIONS { FIND_ALPHA_DONT_INIT, FIND_ALPHA_INIT_FOLDER };
 	enum { INVALID_FILENAME = 0xFE, NO_MORE_AVAILABLE_FILES = 0xFF };
 
-	Sdcard(std::string_view root)
-		: FS(root) {
+	Sdcard()
+		: FS("") {
 	}
 
 	bool reload_disk(std::string_view base_dir = "") {
@@ -43,10 +50,10 @@ struct Sdcard : MetaModule::FS {
 	FRESULT create_linkmap(FIL *fil, uint8_t samplenum) {
 		FRESULT res = FR_OK;
 
-		fil->cltbl = chan_clmt[samplenum];
-		chan_clmt[samplenum][0] = 256;
+		// fil->cltbl = chan_clmt[samplenum];
+		// chan_clmt[samplenum][0] = 256;
 
-		res = f_lseek(fil, CREATE_LINKMAP);
+		// res = f_lseek(fil, CREATE_LINKMAP);
 		return res;
 	}
 
@@ -56,6 +63,7 @@ struct Sdcard : MetaModule::FS {
 		DIR dir;
 
 		res = f_opendir(&dir, SYS_DIR.data());
+		f_closedir(&dir);
 
 		if (res != FR_OK) {
 			return FR_INT_ERR; // fail
@@ -76,7 +84,7 @@ struct Sdcard : MetaModule::FS {
 		FILINFO fno;
 		uint8_t i;
 
-		if (dir->obj.fs == 0) {
+		if (dir->is_reset()) {
 			// Open the directory
 			res = f_opendir(dir, parent_path);
 		}
@@ -84,19 +92,19 @@ struct Sdcard : MetaModule::FS {
 			for (;;) {
 				// Read a directory item
 				res = f_readdir(dir, &fno);
-				if (res != FR_OK || fno.fname[0] == 0)
+				if (res != FR_OK || fno.fname()[0] == 0)
 					break;
 
 				// It's a directory that doesn't start with a dot
-				if ((fno.fattrib & AM_DIR) && (fno.fname[0] != '.')) {
+				if (fno.is_dir() && (fno.fname()[0] != '.')) {
 
 					str_cpy(next_dir_path, parent_path);
 
 					i = str_len(next_dir_path);
 
 					// Append the directory name to the end of parent_path
-					str_cpy(&(next_dir_path[i]), fno.fname);
-					return (FR_OK);
+					str_cpy(&(next_dir_path[i]), fno.fname());
+					return FR_OK;
 				}
 			}
 			return FR_NO_FILE;
@@ -118,22 +126,22 @@ struct Sdcard : MetaModule::FS {
 
 			if (res != FR_OK)
 				return res; // filesystem error
-			if (fno.fname[0] == 0) {
+			if (fno.fname()[0] == 0) {
 				fname[0] = 0;
 				return 0xFF;
 			} // no more files found
 
-			if (fno.fname[0] == '.')
+			if (fno.fname()[0] == '.')
 				continue; // ignore files starting with a .
 
-			i = str_len(fno.fname);
+			i = str_len(fno.fname());
 			if (i == 0xFFFFFFFF)
 				return 0xFE; // file name invalid
 
-			if (fno.fname[i - 4] == ext[0] && upper(fno.fname[i - 3]) == upper(ext[1]) &&
-				upper(fno.fname[i - 2]) == upper(ext[2]) && upper(fno.fname[i - 1]) == upper(ext[3]))
+			if (fno.fname()[i - 4] == ext[0] && upper(fno.fname()[i - 3]) == upper(ext[1]) &&
+				upper(fno.fname()[i - 2]) == upper(ext[2]) && upper(fno.fname()[i - 1]) == upper(ext[3]))
 			{
-				str_cpy(fname, fno.fname);
+				str_cpy(fname, fno.fname());
 				return (FR_OK);
 			}
 		}
@@ -175,6 +183,9 @@ struct Sdcard : MetaModule::FS {
 		} // last possible file name, alphabetically
 		fname[0] = 0; // null string
 
+		//FIXME:
+		// fno.fname[0] = 'a'; // enables while loop
+
 		// Open folder
 		res = f_opendir(&dir, path);
 		if (res != FR_OK)
@@ -182,25 +193,25 @@ struct Sdcard : MetaModule::FS {
 
 		// Loop through folder content
 		for (;;) {
-			res = f_readdir(&dir, &fno); // next file in firectory
+			res = f_readdir(&dir, &fno); // next file in directory
 			if (res != FR_OK)
 				return res; // filesystem error
 
-			if (fno.fname[0] == 0) {
+			if (fno.fname()[0] == 0) {
 				fname[0] = 0;
 				break;
 			} // no more files found -> exit loop
 
-			if (fno.fname[0] == '.')
+			if (fno.fname()[0] == '.')
 				continue; // ignore files starting with a .
 
-			i = str_len(fno.fname);
+			i = str_len(fno.fname());
 			if (i == 0xFFFFFFFF)
 				return INVALID_FILENAME; // invalid file name
 
 			// check for extension at the end of filename
-			if (fno.fname[i - 4] == ext[0] && upper(fno.fname[i - 3]) == upper(ext[1]) &&
-				upper(fno.fname[i - 2]) == upper(ext[2]) && upper(fno.fname[i - 1]) == upper(ext[3]))
+			if (fno.fname()[i - 4] == ext[0] && upper(fno.fname()[i - 3]) == upper(ext[1]) &&
+				upper(fno.fname()[i - 2]) == upper(ext[2]) && upper(fno.fname()[i - 1]) == upper(ext[3]))
 			{
 				fnum++;
 				if (used_from_folder[fnum - 1]) {
@@ -208,14 +219,14 @@ struct Sdcard : MetaModule::FS {
 				} // if file already used, move on to next file
 				else
 				{
-					if (str_len(fno.fname) > (FF_MAX_LFN - 2)) {
+					if (str_len(fno.fname()) > (FF_MAX_LFN - 2)) {
 						used_from_folder[fnum - 1] = 1;
 						continue;
 					} // if filename is too long: Mark as 'used' and look for next file
-					if ((str_cmp_alpha(firstf_name, fno.fname) > 0)) // if found file comes first alphabetically
+					if ((str_cmp_alpha(firstf_name, fno.fname()) > 0)) // if found file comes first alphabetically
 					{
-						firstf_num = fnum - 1;			 // set number of the first file to the current file number
-						str_cpy(firstf_name, fno.fname); // set the name of the first file to the current file name
+						firstf_num = fnum - 1;			   // set number of the first file to the current file number
+						str_cpy(firstf_name, fno.fname()); // set the name of the first file to the current file name
 					}
 				}
 			}
@@ -233,3 +244,5 @@ struct Sdcard : MetaModule::FS {
 		return FR_OK;
 	}
 };
+
+} // namespace SamplerKit

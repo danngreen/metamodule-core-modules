@@ -214,6 +214,7 @@ private:
 		for (auto [i, pot] : enumerate(pot_state)) {
 			pot.cur_val = (int16_t)controls.read_pot(static_cast<PotAdcElement>(i));
 
+#ifndef METAMODULE
 			int16_t diff = std::abs(pot.cur_val - pot.prev_val);
 			if (diff > Brain::MinPotChange) {
 				pot.track_moving_ctr = 50;
@@ -238,13 +239,13 @@ private:
 					pot.moved_while_bank_down = true;
 					button_handler.ignore_bank_release = true;
 				}
-
 				if (pot.is_catching_up && std::abs(pot.latched_val - pot.cur_val) < (Brain::MinPotChange * 2))
 					pot.is_catching_up = false;
 
 				pot.delta = diff;
 				pot.prev_val = pot.cur_val;
 			}
+#endif
 		}
 	}
 

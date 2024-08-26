@@ -1,6 +1,8 @@
 #pragma once
 #include "elements.hh"
 #include "sampler/mocks/mocks.hh"
+#include "sampler/src/audio_stream_conf.hh"
+#include <cmath>
 
 namespace SamplerKit
 {
@@ -8,8 +10,8 @@ namespace SamplerKit
 class Controls {
 public:
 	// ADCs (Pots and CV):
-	std::array<uint16_t, NumCVs> cvs;
-	std::array<uint16_t, NumPots> pots;
+	std::array<uint16_t, NumCVs> cvs{2048, 0, 0, 0, 0};
+	std::array<uint16_t, NumPots> pots{0, 0, 0, 0};
 
 	// Buttons/Switches:
 	Mocks::Button play_button;
@@ -39,6 +41,14 @@ public:
 
 	float sample_rate = 48000.f;
 	uint32_t led_throttle_ctr = 0;
+
+	Controls() {
+		play_button.reset();
+		rev_button.reset();
+		bank_button.reset();
+		play_jack.reset();
+		rev_jack.reset();
+	}
 
 	uint16_t read_pot(PotAdcElement adcnum) {
 		return pots[adcnum];

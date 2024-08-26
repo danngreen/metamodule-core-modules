@@ -4,6 +4,7 @@
 // #include "log.hh"
 #include "pot_state.hh"
 #include "settings.hh"
+#include <cstdio>
 // #include "util/voct_calibrator.hh"
 
 namespace SamplerKit
@@ -71,6 +72,7 @@ struct ButtonActionHandler {
 			ignore_play_release = false;
 		}
 
+#ifndef METAMODULE
 		// Long hold Play and Rev to toggle Rec/Play mode
 		if (!ignore_rev_release && controls.rev_button.how_long_held_pressed() > two_sec) {
 			if (!ignore_play_release && controls.play_button.how_long_held_pressed() > two_sec) {
@@ -81,6 +83,7 @@ struct ButtonActionHandler {
 				}
 			}
 		}
+#endif
 
 		// Hold Play to toggle looping
 		if (!ignore_play_release && controls.play_button.how_long_held_pressed() > short_press) {
@@ -90,6 +93,7 @@ struct ButtonActionHandler {
 			}
 		}
 
+#ifndef METAMODULE
 		// Long hold Bank + Rev for CV Calibration
 		if (!ignore_bank_release && controls.bank_button.how_long_held_pressed() > one_sec) {
 			if (!ignore_rev_release && controls.rev_button.how_long_held_pressed() > one_sec) {
@@ -100,7 +104,6 @@ struct ButtonActionHandler {
 				}
 			}
 		}
-
 		// Long hold Play + Bank to toggle stereo mode
 		if (!ignore_bank_release && controls.bank_button.how_long_held_pressed() > one_sec) {
 			if (!ignore_play_release && controls.play_button.how_long_held_pressed() > one_sec) {
@@ -124,6 +127,7 @@ struct ButtonActionHandler {
 				}
 			}
 		}
+#endif
 
 		// Bank -> change bank
 		if (controls.bank_button.is_just_released()) {

@@ -31,16 +31,13 @@ public:
 
 			play_buff[i].wrapping = 0;
 		}
-
-		// sampler.start();
 	}
 
 	void fs_process(uint32_t tm) {
 		sampler.update_fs_thread(tm);
 	}
 
-	void update(float tm) {
-		// 	sampler.recorder.record_audio_to_buffer(inblock);
+	void update(uint32_t tm) {
 		if (++out_buf_pos >= outblock.size()) {
 			out_buf_pos = 0;
 			params.update(tm);
@@ -107,13 +104,13 @@ public:
 			controls.cvs[SamplerKit::PitchCV] = bipolar_cv(volts);
 
 		} else if (input_id == mapping.LengthCvIn) {
-			controls.pots[SamplerKit::LengthCV] = unipolar_cv(volts);
+			controls.cvs[SamplerKit::LengthCV] = unipolar_cv(volts);
 
 		} else if (input_id == mapping.StartPosCvIn) {
-			controls.pots[SamplerKit::StartCV] = unipolar_cv(volts);
+			controls.cvs[SamplerKit::StartCV] = unipolar_cv(volts);
 
 		} else if (input_id == mapping.SampleCvIn) {
-			controls.pots[SamplerKit::SampleCV] = unipolar_cv(volts);
+			controls.cvs[SamplerKit::SampleCV] = unipolar_cv(volts);
 
 		} else if (input_id == mapping.RecIn) {
 			//not used
@@ -125,14 +122,17 @@ public:
 	}
 
 	std::optional<float> get_output(unsigned output_id) const {
+		static constexpr int32_t kMaxValue = MathTools::ipow(2, 23);
+		static constexpr float kMaxValueVolts = kMaxValue / 10.f;
+
 		if (output_id == mapping.OutL)
-			return outblock[out_buf_pos].chan[0];
+			return (float)outblock[out_buf_pos].chan[0] / kMaxValueVolts;
 
 		else if (output_id == mapping.OutR)
-			return outblock[out_buf_pos].chan[1];
+			return (float)outblock[out_buf_pos].chan[1] / kMaxValueVolts;
 
 		else if (output_id == mapping.EndOut)
-			return controls.end_out.sideload_get();
+			return controls.end_out.sideload_get() ? 8.f : 0.f;
 
 		else
 			return 0;
@@ -167,12 +167,16 @@ public:
 			return std::nullopt;
 	}
 
+	void reset() {
+		sampler.state.reset();
+	}
+
 private:
 	STSChanMapping mapping;
 
-	SamplerKit::Controls controls;
+	SamplerKit::Controls controls{};
 	SamplerKit::Params params;
-	SamplerKit::Flags flags;
+	SamplerKit::Flags flags{};
 
 	SamplerKit::Sampler sampler;
 
@@ -191,8 +195,8 @@ private:
 
 	std::array<SamplerKit::CircularBuffer, SamplerKit::NumSamplesPerBank> play_buff;
 
-	AudioStreamConf::AudioInBlock inblock;
-	AudioStreamConf::AudioOutBlock outblock;
+	SamplerKit::AudioStreamConf::AudioInBlock inblock;
+	SamplerKit::AudioStreamConf::AudioOutBlock outblock;
 	uint32_t out_buf_pos = outblock.size() - 1;
 };
 

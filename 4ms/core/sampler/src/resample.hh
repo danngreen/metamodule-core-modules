@@ -60,7 +60,7 @@ enum class WavChan { Left, Right, Average, Mono };
 
 // Reads signed 16-bit and returns signed 24-bit stored in an int32_t
 template<WavChan Chan>
-inline int32_t get_sample(uint32_t addr) {
+inline int32_t get_sample(uintptr_t addr) {
 	wait_memory_ready();
 
 	struct StereoSample {
@@ -92,10 +92,23 @@ inline int32_t get_sample(uint32_t addr) {
 // 	_resample_read<chan>(rs, buf, buff_len, block_align, outbuf.data(), rev, flush);
 // }
 
+struct ResampleState {
+	float fractional_pos = 0;
+	float xm1 = 0;
+	float x0 = 0;
+	float x1 = 0;
+	float x2 = 0;
+};
+
 template<WavChan Chan>
-void resample_read(float rs, CircularBuffer *buf, std::span<int32_t> outbuf, bool rev, bool flush) {
-	static float fractional_pos = 0;
-	static float xm1, x0, x1, x2;
+void resample_read(
+	float rs, CircularBuffer *buf, std::span<int32_t> outbuf, bool rev, bool flush, ResampleState &state) {
+	float &fractional_pos = state.fractional_pos;
+	float &xm1 = state.xm1;
+	float &x0 = state.x0;
+	float &x1 = state.x1;
+	float &x2 = state.x2;
+
 	float a, b, c;
 	uint32_t outpos;
 	float t_out;

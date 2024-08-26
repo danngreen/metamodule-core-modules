@@ -14,6 +14,7 @@ struct TrigIn : public Debouncer<0b0001, 0b1110, 0b1111> {
 
 struct Button : public Toggler {
 	void update() {
+		steady_state_ctr++;
 	}
 
 	void sideload_set(bool new_state) {

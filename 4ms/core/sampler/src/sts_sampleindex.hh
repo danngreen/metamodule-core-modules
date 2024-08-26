@@ -28,9 +28,9 @@
 
 #pragma once
 
-#include "ff.h"
 #include "flags.hh"
 #include "sample_file.hh"
+#include "sdcard.hh"
 
 namespace SamplerKit
 {

@@ -120,7 +120,7 @@ public:
 		uint32_t pre_buff_amt =
 			(float)(BASE_BUFFER_THRESHOLD * s_sample->blockAlign * s_sample->numChannels) * resample_amt;
 		auto playback_buff_amt = std::clamp<uint32_t>(pre_buff_amt * 4, 0, (play_buff[samplenum].size * 7) / 10);
-		uint32_t target_buff_amt = params.play_state == PlayStates::PREBUFFERING ? pre_buff_amt : playback_buff_amt;
+		auto target_buff_amt = params.play_state == PlayStates::PREBUFFERING ? pre_buff_amt : playback_buff_amt;
 
 		// Check if the we need to load more from SD Card to the buffer
 		if (!s.is_buffered_to_file_end[samplenum] && (s.play_buff_bufferedamt[samplenum] < target_buff_amt)) {
@@ -160,7 +160,7 @@ public:
 						pr_err("Err EOF\n");
 					}
 
-					s.sample_file_curpos[samplenum] = f_tell(&s.fil[samplenum]) - s_sample->startOfData;
+					s.sample_file_curpos[samplenum] = sd.f_tell(&s.fil[samplenum]) - s_sample->startOfData;
 
 					if (s.sample_file_curpos[samplenum] >= s_sample->inst_end) {
 						s.is_buffered_to_file_end[samplenum] = 1;
@@ -176,12 +176,12 @@ public:
 						// Jump back a block
 						rd = READ_BLOCK_SIZE;
 
-						t_fptr = f_tell(&s.fil[samplenum]);
+						t_fptr = sd.f_tell(&s.fil[samplenum]);
 						res = sd.f_lseek(&s.fil[samplenum], t_fptr - READ_BLOCK_SIZE);
-						if (res || (f_tell(&s.fil[samplenum]) != (t_fptr - READ_BLOCK_SIZE)))
+						if (res || (sd.f_tell(&s.fil[samplenum]) != (t_fptr - READ_BLOCK_SIZE)))
 							g_error |= LSEEK_FPTR_MISMATCH;
 
-						s.sample_file_curpos[samplenum] = f_tell(&s.fil[samplenum]) - s_sample->startOfData;
+						s.sample_file_curpos[samplenum] = sd.f_tell(&s.fil[samplenum]) - s_sample->startOfData;
 
 					} else {
 						// rd < READ_BLOCK_SIZE: read the first block
@@ -198,7 +198,7 @@ public:
 					}
 
 					// Read one block forward
-					t_fptr = f_tell(&s.fil[samplenum]);
+					t_fptr = sd.f_tell(&s.fil[samplenum]);
 					res = sd.f_read(&s.fil[samplenum], file_read_buffer, rd, &br);
 					if (res != FR_OK)
 						g_error |= FILE_READ_FAIL_1;
@@ -210,7 +210,7 @@ public:
 					res = sd.f_lseek(&s.fil[samplenum], t_fptr);
 					if (res != FR_OK)
 						g_error |= FILE_SEEK_FAIL;
-					if (f_tell(&s.fil[samplenum]) != t_fptr)
+					if (sd.f_tell(&s.fil[samplenum]) != t_fptr)
 						g_error |= LSEEK_FPTR_MISMATCH;
 				}
 

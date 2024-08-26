@@ -38,7 +38,6 @@
 #include "sts_filesystem.hh"
 #include "bank_util.hh"
 #include "elements.hh"
-#include "ff.h"
 #include "log.hh"
 #include "sample_header.hh"
 #include "str_util.h"
@@ -68,6 +67,7 @@ uint8_t SampleIndexLoader::load_all_banks(bool force_reload) {
 		pr_log("Checking for empty banks\n");
 		banks.check_enabled_banks();
 
+#ifndef METAMODULE
 		// Check for new folders, and turn them into banks if possible
 		pr_log("Scanning new folders for samples\n");
 		load_new_folders();
@@ -80,6 +80,10 @@ uint8_t SampleIndexLoader::load_all_banks(bool force_reload) {
 		// Check for empty slots
 		pr_log("Looking for samples to fill empty slots\n");
 		load_empty_slots();
+#else
+		// Load all the banks that have default folder names
+		load_empty_banks_by_default_colors();
+#endif
 
 	}
 
@@ -96,7 +100,7 @@ uint8_t SampleIndexLoader::load_all_banks(bool force_reload) {
 		load_banks_by_default_colors();
 
 		// Second pass: look for folders that start with a bank name, example "Red - My Samples/"
-		pr_log("Looking for dirs with color names and a number suffix\n");
+		pr_log("Looking for dirs that start with a bank name\n");
 		load_banks_by_color_prefix();
 
 		// Third pass: go through all remaining folders and try to assign them to banks
@@ -106,11 +110,13 @@ uint8_t SampleIndexLoader::load_all_banks(bool force_reload) {
 		banks.check_enabled_banks();
 	}
 
+#ifndef METAMODULE
 	if (index_needs_writeback) {
 		if (auto res = write_index_and_html(); res != FR_OK)
 			return res;
 		index_needs_writeback = false;
 	}
+#endif
 
 	flags.set(Flag::StartupDone);
 	pr_log("Done!\n");
@@ -376,7 +382,7 @@ void SampleIndexLoader::load_new_folders(void) {
 	uint8_t checked_root = 0;
 
 	// reset dir object, so it can be used by get_next_dir
-	root_dir.obj.fs = 0;
+	sd.reset_dir(&root_dir);
 
 	while (1) {
 		bank_loaded = 0;
@@ -531,6 +537,44 @@ uint8_t SampleIndexLoader::load_banks_by_default_colors(void) {
 	return banks_loaded;
 }
 
+// Looks for empty banks and searches for a folder with that name
+uint8_t SampleIndexLoader::load_empty_banks_by_default_colors(void) {
+	uint8_t bank;
+	char bankname[FF_MAX_LFN], bankname_case[FF_MAX_LFN];
+	uint8_t banks_loaded;
+
+	banks_loaded = 0;
+	for (bank = 0; bank < MaxNumBanks; bank++) {
+		if (banks.is_bank_enabled(bank))
+			continue;
+
+		bank_to_color(bank, bankname);
+
+		// Color
+		if (load_bank_from_disk((samples[bank]), bankname)) {
+			banks.enable_bank(bank);
+			banks_loaded++;
+		} else {
+			// COLOR
+			str_to_upper(bankname, bankname_case);
+			if (load_bank_from_disk((samples[bank]), bankname_case)) {
+				banks.enable_bank(bank);
+				banks_loaded++;
+			} else {
+				// color
+				str_to_lower(bankname, bankname_case);
+				if (load_bank_from_disk((samples[bank]), bankname_case)) {
+					banks.enable_bank(bank);
+					banks_loaded++;
+				} else {
+					banks.disable_bank(bank);
+				}
+			}
+		}
+	}
+	return banks_loaded;
+}
+
 uint8_t SampleIndexLoader::load_banks_by_color_prefix(void) {
 	uint8_t bank;
 	char foldername[FF_MAX_LFN];
@@ -546,7 +590,7 @@ uint8_t SampleIndexLoader::load_banks_by_color_prefix(void) {
 
 	banks_loaded = 0;
 
-	rootdir.obj.fs = 0; // get_next_dir() needs us to do this, to reset it
+	sd.reset_dir(&rootdir);
 
 	while (1) {
 		// Find the next directory in the root folder
@@ -679,7 +723,9 @@ uint8_t SampleIndexLoader::load_banks_with_noncolors(void) {
 	banks_loaded = 0;
 
 	checked_root = 0;
-	rootdir.obj.fs = 0; // get_next_dir() needs us to do this, to reset it
+
+	// get_next_dir() needs us to do this, to reset it
+	sd.reset_dir(&rootdir);
 
 	while (1) {
 		if (!checked_root) {
@@ -798,7 +844,7 @@ uint8_t SampleIndexLoader::load_bank_from_disk(Bank &sample_bank, char *path_nos
 
 		str_cpy(&(path[path_len]), filename);		// Append filename to path
 		res = sd.f_open(&temp_file, path, FA_READ); // Open file
-		sd.f_sync(&temp_file);
+		// sd.f_sync(&temp_file);
 
 		if (res == FR_OK) {
 			if (load_sample_header(&(sample_bank[sample_num]), &temp_file, sd) == FR_OK)

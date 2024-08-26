@@ -22,12 +22,22 @@ struct SampleState {
 	// Whether file is totally cached (from inst_start to inst_end)
 	bool is_buffered_to_file_end[NumSamplesPerBank];
 
-	uint32_t play_buff_bufferedamt[NumSamplesPerBank];
+	uintptr_t play_buff_bufferedamt[NumSamplesPerBank];
 
 	bool cached_rev_state[NumSamplesPerBank];
 
-	FIL fil[NumSamplesPerBank];
+	FIL fil[NumSamplesPerBank]{};
 	Cache cache[NumSamplesPerBank];
+
+	SampleState() {
+		reset();
+	}
+
+	void reset() {
+		for (auto &f : fil) {
+			f.reset();
+		}
+	}
 
 	void check_sample_end(Params &params,
 						  SampleList &samples,

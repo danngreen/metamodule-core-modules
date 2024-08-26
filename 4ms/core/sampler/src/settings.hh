@@ -1,5 +1,5 @@
 #pragma once
-#include "audio_stream_conf.hh"
+#include "sampler/src/audio_stream_conf.hh"
 #include "timing_calcs.hh"
 #include <cstdint>
 
@@ -37,7 +37,7 @@ struct UserSettings {
 	bool perc_env = true;
 	bool fadeupdown_env = true;
 	uint32_t startup_bank = 0;
-	uint32_t trig_delay = 2;
+	uint32_t trig_delay = 0;
 	uint32_t fade_time_ms = 24;
 	bool auto_inc_slot_num_after_rec_trig = false;
 	bool rec_24bits = false;
@@ -47,10 +47,11 @@ struct UserSettings {
 
 	// calculated values (formerly in global_params)
 	// Might move them to Sampler class?
-	float play_trig_delay;
-	float play_trig_latch_pitch_time;
-	float fade_down_rate;
-	float fade_up_rate;
+	float play_trig_delay = trig_delay;
+	float play_trig_latch_pitch_time = trig_delay;
+	float fade_down_rate =
+		TimingCalcs::calc_fade_updown_rate(record_sample_rate, AudioStreamConf::BlockSize, fade_time_ms);
+	float fade_up_rate = fade_down_rate;
 
 	void update_timing_calcs() {
 		play_trig_delay = TimingCalcs::calc_trig_delay(trig_delay);

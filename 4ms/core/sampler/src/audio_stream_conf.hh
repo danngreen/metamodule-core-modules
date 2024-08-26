@@ -1,6 +1,8 @@
 #pragma once
 #include "util/audio_frame.hh"
 
+namespace SamplerKit
+{
 struct AudioStreamConf {
 
 	// BlockSize: Number of Frames processed each time AudioStream::process() is called
@@ -27,3 +29,4 @@ struct AudioStreamConf {
 
 	static constexpr uint32_t FrameRate = AudioStreamConf::SampleRate / AudioStreamConf::BlockSize;
 };
+} // namespace SamplerKit

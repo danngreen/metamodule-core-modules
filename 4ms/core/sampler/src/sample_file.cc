@@ -43,7 +43,7 @@ namespace SamplerKit
 
 FRESULT create_dir(Sdcard &sd, DIR *dir, const char *dir_name) {
 
-	FRESULT res;
+	FRESULT res = FR_NOT_ENABLED;
 
 	// // Open the temp directory
 	// res = sd.f_opendir(dir, dir_name);
@@ -52,13 +52,13 @@ FRESULT create_dir(Sdcard &sd, DIR *dir, const char *dir_name) {
 	// if (res == FR_NO_PATH)
 	// 	res = sd.f_mkdir(dir_name);
 
-	// If we got an error opening or creating a dir
-	// try reloading the SDCard, then opening the dir (and creating if needed)
-	if (res == FR_OK)
-		return FR_OK;
+	// // If we got an error opening or creating a dir
+	// // try reloading the SDCard, then opening the dir (and creating if needed)
+	// if (res == FR_OK)
+	// 	return FR_OK;
 
-	if (!sd.reload_disk())
-		return FR_DISK_ERR;
+	// if (!sd.reload_disk())
+	// 	return FR_DISK_ERR;
 
 	// res = sd.f_opendir(dir, dir_name);
 	// if (res == FR_NO_PATH)

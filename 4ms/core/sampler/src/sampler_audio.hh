@@ -17,8 +17,12 @@ class SamplerAudio {
 	Flags &flags;
 	SampleList &samples;
 	std::array<CircularBuffer, NumSamplesPerBank> &play_buff;
+	ResampleState resample_state_L;
+	ResampleState resample_state_R;
+	ResampleState resample_state_M;
+	ResampleState resample_state_A;
 
-	using ChanBuff = std::array<AudioStreamConf::SampleT, AudioStreamConf::BlockSize>;
+	using ChanBuff = std::array<SamplerKit::AudioStreamConf::SampleT, SamplerKit::AudioStreamConf::BlockSize>;
 
 public:
 	float env_level;
@@ -36,7 +40,8 @@ public:
 		, play_buff{splay_buff} {
 	}
 
-	void update(const AudioStreamConf::AudioInBlock &inblock, AudioStreamConf::AudioOutBlock &outblock) {
+	void update(const SamplerKit::AudioStreamConf::AudioInBlock &inblock,
+				SamplerKit::AudioStreamConf::AudioOutBlock &outblock) {
 		ChanBuff outL;
 		ChanBuff outR;
 
@@ -44,8 +49,6 @@ public:
 			for (auto [in, out] : zip(inblock, outblock)) {
 				auto c0 = in.sign_extend(in.chan[0]);
 				auto c1 = in.sign_extend(in.chan[1]);
-				c0 *= Brain::AudioGain * 0.913f;
-				c1 *= Brain::AudioGain * 0.913f;
 				out.chan[0] = MathTools::signed_saturate(c0, 24);
 				out.chan[1] = MathTools::signed_saturate(c1, 24);
 			}
@@ -54,30 +57,9 @@ public:
 
 		play_audio_from_buffer(outL, outR);
 
-		if (params.settings.stereo_mode) {
-			// Stereo mode
-			// Left Out = Left Sample channel
-			// Right Out = Right Sample channel
-			//
-			for (auto [out, L, R] : zip(outblock, outL, outR)) {
-				// Chan 1 L + Chan 2 L clipped at signed 16-bits
-				int32_t invL = -L;
-				int32_t invR = -R;
-				out.chan[1] = MathTools::signed_saturate(invL, 24);
-				out.chan[0] = MathTools::signed_saturate(invR, 24);
-			}
-			return;
-		}
-
-		{
-			// Mono mode
-			// Left Out = -Right Out = average of L+R
-			for (auto [out, L, R] : zip(outblock, outL, outR)) {
-				// Average is already done in play_audio_from_buffer(), and put into outL
-				int32_t invL = -L;
-				out.chan[1] = MathTools::signed_saturate(invL, 24);
-				out.chan[0] = MathTools::signed_saturate(L, 24);
-			}
+		for (auto [out, L, R] : zip(outblock, outL, outR)) {
+			out.chan[0] = MathTools::signed_saturate(L, 24);
+			out.chan[1] = MathTools::signed_saturate(R, 24);
 		}
 	}
 
@@ -109,16 +91,16 @@ public:
 				rs = MAX_RS / (float)s_sample.numChannels;
 
 			if (s_sample.numChannels == 2) {
-				uint32_t t_u32 = play_buff[samplenum].out;
-				resample_read<WavChan::Left>(rs, &play_buff[samplenum], outL, params.reverse, flush);
+				auto block_start = play_buff[samplenum].out;
+				resample_read<WavChan::Left>(rs, &play_buff[samplenum], outL, params.reverse, flush, resample_state_L);
 
-				play_buff[samplenum].out = t_u32;
-				resample_read<WavChan::Right>(rs, &play_buff[samplenum], outR, params.reverse, flush);
+				play_buff[samplenum].out = block_start;
+				resample_read<WavChan::Right>(rs, &play_buff[samplenum], outR, params.reverse, flush, resample_state_R);
 
 			} else {
 				// MONO: read left channel and copy to right
 				bool flush = flags.read(Flag::PlayBuffDiscontinuity);
-				resample_read<WavChan::Mono>(rs, &play_buff[samplenum], outL, params.reverse, flush);
+				resample_read<WavChan::Mono>(rs, &play_buff[samplenum], outL, params.reverse, flush, resample_state_M);
 				for (unsigned i = 0; i < outL.size(); i++)
 					outR[i] = outL[i];
 			}
@@ -127,9 +109,13 @@ public:
 				rs = MAX_RS;
 
 			if (s_sample.numChannels == 2)
-				resample_read<WavChan::Average>(rs, &play_buff[samplenum], outL, params.reverse, flush);
+				resample_read<WavChan::Average>(
+					rs, &play_buff[samplenum], outL, params.reverse, flush, resample_state_A);
 			else
-				resample_read<WavChan::Mono>(rs, &play_buff[samplenum], outL, params.reverse, flush);
+				resample_read<WavChan::Mono>(rs, &play_buff[samplenum], outL, params.reverse, flush, resample_state_M);
+
+			for (auto &out : outR)
+				out = 0;
 		}
 
 		// TODO: if writing a flag gets expensive, then we could refactor this

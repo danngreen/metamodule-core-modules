@@ -28,9 +28,7 @@
 
 #pragma once
 #include "bank.hh"
-#include "ff.h"
 #include "flags.hh"
-#include "palette.hh"
 #include "sample_file.hh"
 #include "sdcard.hh"
 #include "sts_sampleindex.hh"
@@ -59,6 +57,7 @@ struct SampleIndexLoader {
 
 	uint8_t load_banks_by_color_prefix();
 	uint8_t load_banks_by_default_colors();
+	uint8_t load_empty_banks_by_default_colors();
 	uint8_t load_banks_with_noncolors();
 
 	uint8_t load_all_banks(bool force_reload = false);

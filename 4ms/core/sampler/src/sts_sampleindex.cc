@@ -34,15 +34,21 @@
 #include "sdcard.hh"
 #include "str_util.h"
 
+#ifdef METAMODULE
+#include <chrono>
+#endif
+
 namespace SamplerKit
 {
 
 #define ALL_BANKS MaxNumBanks
 
-#define SAMPLE_SLOT 1
-#define PLAY_START 2
-#define PLAY_SIZE 3
-#define PLAY_GAIN 4
+enum {
+	SAMPLE_SLOT = 1,
+	PLAY_START = 2,
+	PLAY_SIZE = 3,
+	PLAY_GAIN = 4,
+};
 
 #define PLAYDATTAG_SLOT "- sample slot"
 #define PLAYDATTAG_START "- play start"
@@ -56,7 +62,7 @@ namespace SamplerKit
 #define RENAME_LOG_FILE "renamed_folders.txt"
 
 #define EOF_TAG "End of file"
-#define EOF_PAD 10 // number of characters that can be left after EOF_TAG
+static constexpr int EOF_PAD = 10; // number of characters that can be left after EOF_TAG
 
 // Checks if string ends in ".wav" (case-insensitive)
 static uint8_t is_wav(char *string) {
@@ -184,9 +190,14 @@ FRESULT SampleIndex::write_sampleindex_file() {
 	}
 
 	// Write global info to file
-	sd.f_printf(&temp_file, "Timestamp: %d\n", get_fattime()); // timestamp
-	sd.f_printf(&temp_file, EOF_TAG);						   // end of file tag
-	sd.f_printf(&temp_file, "\n"); // text editors report an error if file does not end in newline
+#ifdef METAMODULE
+	auto curtm = std::chrono::steady_clock::now().time_since_epoch().count() / 1'000'000LL;
+#else
+	auto curtm = get_fattime();
+#endif
+	sd.f_printf(&temp_file, "Timestamp: %d\n", curtm); // timestamp
+	sd.f_printf(&temp_file, EOF_TAG);				   // end of file tag
+	sd.f_printf(&temp_file, "\n");					   // text editors report an error if file does not end in newline
 
 	// CLOSE INDEX FILE
 	sd.f_sync(&temp_file);
@@ -323,7 +334,7 @@ FRESULT SampleIndex::backup_sampleindex_file(void) {
 			return FR_INT_ERR; // ToDo: there should be a way to report this error more accurately
 		}
 
-		if (f_eof(&indexfile)) {
+		if (sd.f_eof(&indexfile)) {
 			sd.f_close(&indexfile);
 			sd.f_close(&backupindex);
 			return FR_OK;
@@ -351,7 +362,7 @@ bool SampleIndex::check_sampleindex_valid(const char *indexfilename) {
 	// Verify it's a complete file, with EOF_TAG at the end
 	l = str_len(EOF_TAG) + EOF_PAD;
 
-	res = sd.f_lseek(&temp_file, f_size(&temp_file) - l);
+	res = sd.f_lseek(&temp_file, sd.f_size(&temp_file) - l);
 	if (res != FR_OK) {
 		sd.f_close(&temp_file);
 		return false;
@@ -434,7 +445,7 @@ FRESULT SampleIndex::load_sampleindex_file(SampleIndex::IndexSelection use_backu
 
 	uint32_t dot_cnt = 0;
 	// Read File
-	while (!f_eof(&temp_file)) // until we reach the eof
+	while (!sd.f_eof(&temp_file)) // until we reach the eof
 	{
 		sd.f_gets(read_buffer, FF_MAX_LFN + 1, &temp_file); // Read next line
 		pr_log(".");

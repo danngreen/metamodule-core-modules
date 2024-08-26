@@ -95,7 +95,7 @@ uint8_t bank_to_color(uint8_t bank, char *color) {
 			len++;
 		}
 
-		return (len);
+		return len;
 	} else
 		return bank_to_color_string(bank, color);
 }

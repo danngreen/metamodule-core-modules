@@ -34,10 +34,6 @@ struct Sampler {
 	Recorder recorder;
 #endif
 
-	void start() {
-		// loader.start();
-	}
-
 	void update_fs_thread(uint32_t time) {
 		modes.process_mode_flags(time);
 		loader.update(time);

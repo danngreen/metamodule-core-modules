@@ -2,7 +2,6 @@
 #include "errors.hh"
 #include "sdcard.hh"
 #include "wavefmt.hh"
-#include <cstdio>
 
 #if TESTPROJECT
 #define printf_ printf
@@ -60,7 +59,7 @@ uint32_t load_sample_header(Sample *s_sample, FIL *sample_file, Sdcard &sd) {
 		if (chunk_hdr.chunkSize & 0b1)
 			chunk_hdr.chunkSize++;
 
-		next_chunk_start = f_tell(sample_file) + chunk_hdr.chunkSize;
+		next_chunk_start = sd.f_tell(sample_file) + chunk_hdr.chunkSize;
 		// fast-forward to the next chunk
 		if (chunk_hdr.chunkId != ccFMT)
 			sd.f_lseek(sample_file, next_chunk_start);
@@ -68,7 +67,7 @@ uint32_t load_sample_header(Sample *s_sample, FIL *sample_file, Sdcard &sd) {
 
 	// Go back to beginning of chunk --probably could do this more elegantly by removing fmtID and fmtSize from
 	// WaveFmtChunk and just reading the next bit of data
-	sd.f_lseek(sample_file, f_tell(sample_file) - sizeof(WaveChunkHeader));
+	sd.f_lseek(sample_file, sd.f_tell(sample_file) - sizeof(WaveChunkHeader));
 
 	// Re-read the whole chunk (or at least the fields we need) since it's a WaveFmtChunk
 	rd = sizeof(WaveFmtChunk);
@@ -102,7 +101,7 @@ uint32_t load_sample_header(Sample *s_sample, FIL *sample_file, Sdcard &sd) {
 		if (auto err = read(sample_file, &chunk_hdr, rd, &br, sd); err)
 			return err;
 
-		next_chunk_start = f_tell(sample_file) + chunk_hdr.chunkSize;
+		next_chunk_start = sd.f_tell(sample_file) + chunk_hdr.chunkSize;
 
 		// Fix an odd-sized chunk, it should always be even
 		if (chunk_hdr.chunkSize & 0b1) {
@@ -118,12 +117,12 @@ uint32_t load_sample_header(Sample *s_sample, FIL *sample_file, Sdcard &sd) {
 			}
 
 			// Check the file is really as long as the data chunkSize says it is
-			if (f_size(sample_file) < (f_tell(sample_file) + chunk_hdr.chunkSize)) {
-				chunk_hdr.chunkSize = f_size(sample_file) - f_tell(sample_file);
+			if (sd.f_size(sample_file) < (sd.f_tell(sample_file) + chunk_hdr.chunkSize)) {
+				chunk_hdr.chunkSize = sd.f_size(sample_file) - sd.f_tell(sample_file);
 			}
 
 			s_sample->sampleSize = chunk_hdr.chunkSize;
-			s_sample->startOfData = f_tell(sample_file);
+			s_sample->startOfData = sd.f_tell(sample_file);
 			s_sample->file_status = FileStatus::Found;
 			s_sample->inst_end = s_sample->sampleSize;
 			s_sample->inst_size = s_sample->sampleSize;
@@ -168,7 +167,7 @@ uint32_t load_sample_header(Sample *s_sample, FIL *sample_file, Sdcard &sd) {
 		}
 
 		// stop if this is the last chunk
-		if ((next_chunk_start + sizeof(WaveChunkHeader)) >= f_size(sample_file))
+		if ((next_chunk_start + sizeof(WaveChunkHeader)) >= sd.f_size(sample_file))
 			break;
 
 		// keeping scanning chunks
