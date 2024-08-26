@@ -7,6 +7,8 @@
 #include "sampler/sampler_channel.hh"
 #include "sampler/src/sts_filesystem.hh"
 #include "sdcard.hh"
+#include <atomic>
+#include <chrono>
 
 namespace MetaModule
 {
@@ -18,39 +20,42 @@ public:
 	using enum Info::Elem;
 
 private:
-	// Run this in the low-pri thread:
+	// This runs in the low-pri thread:
 	AsyncThread fs_thread{[this]() {
 		if (!index_is_loaded) {
-			printf("Loading samples from %s\n", root_dir.data());
+			printf("Loading samples from '%s'\n", root_dir.data());
 
 			sd.reload_disk(root_dir);
 
 			index_loader.load_all_banks();
+			chanL.reset();
+			chanR.reset();
+
 			index_is_loaded = true;
 		}
 
 		if (tm - last_tm >= 1) {
 			last_tm = tm;
+
 			chanL.fs_process(tm);
 			chanR.fs_process(tm);
-			// DebugPin1Low();
+
+			// For now, disable saving the index
 			// index_loader.handle_events();
 		}
 	}};
 
 public:
-	STSCore() {
-		// sd.reload();
-		// TODO: load index
-		SamplerKit::Flags flags;
-		SamplerKit::SampleIndexLoader index_loader{sd, samples, banks, flags};
-		index_loader.load_all_banks();
-	}
-
 	void update() override {
-		tm += ms_per_update;
-		chanL.update(tm);
-		chanR.update(tm);
+		tm = std::chrono::steady_clock::now().time_since_epoch().count() / 1'000'000LL;
+
+		if (index_is_loaded) {
+			chanL.update(tm);
+			chanR.update(tm);
+		} else {
+			//Leds leds{index_flags, controls};
+			//leds.animate_startup()
+		}
 
 		if (!started_fs_thread && id > 0) {
 			fs_thread.start(id);
@@ -60,18 +65,14 @@ public:
 
 	void set_param(int param_id, float val) override {
 		if (param_id == CoreHelper<Info>::param_index<AltParamStereoMode>()) {
-			bool new_stereo_mode = val < 0.5f;
-			if (new_stereo_mode != settings.stereo_mode) {
-				settings.stereo_mode = val < 0.5f;
-				printf("Changing stereo mode to %d\n", settings.stereo_mode);
-			}
+			settings.stereo_mode = val < 0.5f;
 
 		} else if (param_id == CoreHelper<Info>::param_index<AltParamSampleDir>()) {
 			auto new_index_file = root_name(val);
 			if (new_index_file != root_dir) {
 				root_dir = new_index_file;
-				index_is_loaded = false;
-				printf("Changing index to %s (%f)\n", new_index_file.data(), val);
+				// Disable live changing root
+				// index_is_loaded = false;
 			}
 		}
 
@@ -92,15 +93,21 @@ public:
 		//TODO: if chanR is not patched, feed mono to chan L
 
 		if (output_id == OutL) {
-			return chanL.get_output(OutL).value_or(0) + chanR.get_output(OutL).value_or(0);
+			if (settings.stereo_mode)
+				return 0.5f * (chanL.get_output(OutL).value_or(0.f) + chanR.get_output(OutL).value_or(0.f));
+			else
+				return chanL.get_output(OutL).value_or(0.f);
 
 		} else if (output_id == OutR) {
-			return chanL.get_output(OutR).value_or(0) + chanR.get_output(OutR).value_or(0);
+			if (settings.stereo_mode)
+				return 0.5f * (chanL.get_output(OutR).value_or(0.f) + chanR.get_output(OutR).value_or(0.f));
+			else
+				return chanR.get_output(OutL).value_or(0.f);
 
-		} else if (auto found = chanL.get_output(output_id); found.has_value()) {
+		} else if (auto found = chanL.get_output(output_id)) {
 			return *found;
 
-		} else if (auto found = chanR.get_output(output_id); found.has_value()) {
+		} else if (auto found = chanR.get_output(output_id)) {
 			return *found;
 		}
 		return 0.f;
@@ -119,6 +126,9 @@ public:
 		else if (auto found = chanR.get_led_brightness(led_id); found.has_value())
 			return *found;
 
+		else if (led_id == CoreHelper<Info>::first_light_index<BusyLight>())
+			return index_is_loaded ? 0 : 1.f;
+
 		else
 			return 0.f;
 	}
@@ -135,14 +145,14 @@ public:
 	// clang-format on
 
 private:
-	SamplerKit::Sdcard sd{"1:/"};
+	SamplerKit::Sdcard sd;
 	SamplerKit::SampleList samples;
 	SamplerKit::BankManager banks{samples};
-	SamplerKit::UserSettings settings;
+	SamplerKit::UserSettings settings{}; //TODO: load from file
 	SamplerKit::CalibrationStorage cal_storage;
 
-	float tm = 0;
-	float last_tm = 0;
+	uint32_t tm = 0;
+	uint32_t last_tm = 0;
 	float ms_per_update = 1000.f / 48000.f;
 	bool started_fs_thread = false;
 
@@ -184,7 +194,7 @@ private:
 		.SampleKnob = CoreHelper<STSInfo>::param_index<SampleRKnob>(),
 		.StartPosKnob = CoreHelper<STSInfo>::param_index<StartPos_RKnob>(),
 		.LengthKnob = CoreHelper<STSInfo>::param_index<LengthRKnob>(),
-		.PlayButton = CoreHelper<STSInfo>::param_index<PlayLButton>(),
+		.PlayButton = CoreHelper<STSInfo>::param_index<PlayRButton>(),
 		.BankButton = CoreHelper<STSInfo>::param_index<BankRButton>(),
 		.ReverseButton = CoreHelper<STSInfo>::param_index<ReverseRButton>(),
 		.PlayTrigIn = CoreHelper<STSInfo>::input_index<PlayTrigRIn>(),
