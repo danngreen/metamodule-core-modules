@@ -67,7 +67,6 @@ target_include_directories(CoreModules-4ms PUBLIC
 	core/
 	core/peg-common/
 	core/peg-common/mocks
-    ${FWDIR}/src/vcv_hardware
     ${FWDIR}/lib/fatfs/source
     ${FWDIR}/src/fs/fatfs
 )
