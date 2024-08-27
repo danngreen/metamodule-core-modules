@@ -213,7 +213,8 @@
     <polyline points="251.54 303.03 253.27 303.03 253.27 298.02 255.3 298.02 255.3 303.03 256.99 303.03" style="fill: none; stroke: #000; stroke-miterlimit: 10;"/>
     <text transform="translate(234.46 137.08) scale(.88 1)" style="font-family: GillSans-Bold, &apos;Gill Sans&apos;; font-size: 9px; font-weight: 700; letter-spacing: -.04em;"><tspan x="0" y="0">Start Pos.</tspan></text>
     <text transform="translate(177.17 227.13) scale(.88 1)" style="font-family: GillSans-Bold, &apos;Gill Sans&apos;; font-size: 9px; font-weight: 700; letter-spacing: -.04em;"><tspan x="0" y="0">Bank</tspan></text>
-    <text transform="translate(144.1 46.2) scale(.88 1)" style="font-family: GillSans-SemiBold, &apos;Gill Sans&apos;; font-size: 8px; font-weight: 600; letter-spacing: -.04em;"><tspan x="0" y="0">Reload</tspan></text>
+    <text transform="translate(126.56 45.11) scale(.88 1)" style="font-family: GillSans-SemiBold, &apos;Gill Sans&apos;; font-size: 8px; font-weight: 600; letter-spacing: -.04em;"><tspan x="0" y="0">Reload</tspan></text>
+    <text transform="translate(173.61 45.11) scale(.88 1)" style="font-family: GillSans-SemiBold, &apos;Gill Sans&apos;; font-size: 8px; font-weight: 600; letter-spacing: -.04em;"><tspan x="0" y="0">Busy</tspan></text>
     <g>
       <path d="M37.67,34.54c-.83,0-1.65.07-2.45.17l-.39-2.21c.93-.12,1.88-.19,2.84-.19s1.91.07,2.84.19l-.39,2.21c-.81-.1-1.62-.17-2.45-.17Z" style="stroke-width: 0px;"/>
       <path d="M23.18,40.91l-1.73-1.45c1.28-1.4,2.74-2.63,4.34-3.66l1.12,1.94c-1.38.9-2.62,1.96-3.73,3.16Z" style="stroke-width: 0px;"/>
@@ -234,6 +235,7 @@
     <rect id="Screen" x="66.74" y="55.37" width="153.92" height="70.82" style="stroke-width: 0px;"/>
   </g>
   <g id="components">
+    <circle id="Busy_RedLight" data-name="Busy#RedLight" cx="165.56" cy="42.74" r="4.25" style="fill: #f0f; stroke-width: 0px;"/>
     <circle id="Play_B_Light_WhiteLight" data-name="Play B Light#WhiteLight" cx="237.55" cy="241.45" r="4.25" style="fill: #f0f; stroke-width: 0px;"/>
     <circle id="Bank_B_Light" data-name="Bank B Light" cx="102.65" cy="209.66" r="4.25" style="fill: #f0f; stroke-width: 0px;"/>
     <circle id="Play_A_Light_WhiteLight" data-name="Play A Light#WhiteLight" cx="50.71" cy="241.45" r="4.25" style="fill: #f0f; stroke-width: 0px;"/>
@@ -251,12 +253,12 @@
     <circle id="Start_Pos_CV_A" data-name="Start Pos CV A" cx="73.91" cy="319.37" r="11.34" style="fill: lime; stroke-width: 0px;"/>
     <circle id="Length_CV_A" data-name="Length CV A" cx="27.2" cy="319.51" r="11.34" style="fill: lime; stroke-width: 0px;"/>
     <circle id="Play_Trig_B" data-name="Play Trig B" cx="260.66" cy="283.45" r="11.34" style="fill: #80ff80; stroke-width: 0px;"/>
-    <circle id="_1V_Oct_B" data-name="1V/Oct B" cx="213.99" cy="284.01" r="11.34" style="fill: lime; stroke-width: 0px;"/>
+    <circle id="Pitch_V_Oct_B" data-name="Pitch V/Oct B" cx="213.99" cy="284.01" r="11.34" style="fill: lime; stroke-width: 0px;"/>
     <circle id="Reverse_Trig_B" data-name="Reverse Trig B" cx="167.23" cy="283.45" r="11.34" style="fill: #80ff80; stroke-width: 0px;"/>
     <circle id="Reverse_Trig_A" data-name="Reverse Trig A" cx="120.67" cy="283.45" r="11.34" style="fill: #80ff80; stroke-width: 0px;"/>
-    <circle id="_1V_Oct_A" data-name="1V/Oct A" cx="73.91" cy="284.01" r="11.34" style="fill: lime; stroke-width: 0px;"/>
+    <circle id="Pitch_V_oct_A" data-name="Pitch V/oct A" cx="73.91" cy="284.01" r="11.34" style="fill: lime; stroke-width: 0px;"/>
     <circle id="Play_Trig_A" data-name="Play Trig A" cx="27.2" cy="283.45" r="11.34" style="fill: #80ff80; stroke-width: 0px;"/>
-    <circle id="Reload_Samples_SmallButton" data-name="Reload Samples#SmallButton" cx="129.44" cy="43.84" r="8.5" style="fill: #ffc000; stroke-width: 0px;"/>
+    <circle id="Reload_Samples_SmallButton" data-name="Reload Samples#SmallButton" cx="112.67" cy="42.74" r="8.5" style="fill: #ffc000; stroke-width: 0px;"/>
     <circle id="Next_Bank_B_MomentaryArrowRightButton" data-name="Next Bank B#MomentaryArrowRightButton" cx="202.18" cy="209.66" r="8.5" style="fill: #ffc000; stroke-width: 0px;"/>
     <circle id="Prev_Bank_B_MomentaryArrowLeftButton" data-name="Prev Bank B#MomentaryArrowLeftButton" cx="171.83" cy="209.66" r="8.5" style="fill: #ffc000; stroke-width: 0px;"/>
     <circle id="Reverse_B_MomentaryRGB7mm" data-name="Reverse B#MomentaryRGB7mm" cx="252.57" cy="208.82" r="8.5" style="fill: #ffc000; stroke-width: 0px;"/>
@@ -275,6 +277,7 @@
     <circle id="Pitch_A" data-name="Pitch A" cx="37.67" cy="54.34" r="17.01" style="fill: #ff0040; stroke-width: 0px;"/>
     <text id="slug" transform="translate(183.52 361.82)" style="font-family: MyriadPro-Regular, &apos;Myriad Pro&apos;; font-size: 6px;"><tspan x="0" y="0">S</tspan><tspan x="2.96" y="0" style="letter-spacing: 0em;">T</tspan><tspan x="5.9" y="0">SP</tspan></text>
     <text id="modulename" transform="translate(198.99 361.82)" style="font-family: MyriadPro-Regular, &apos;Myriad Pro&apos;; font-size: 6px;"><tspan x="0" y="0" style="letter-spacing: 0em;">S</tspan><tspan x="2.94" y="0" style="letter-spacing: 0em;">t</tspan><tspan x="4.89" y="0">e</tspan><tspan x="7.9" y="0" style="letter-spacing: 0em;">r</tspan><tspan x="9.8" y="0">eo</tspan><tspan x="16.1" y="0" style="letter-spacing: -.04em;"> </tspan><tspan x="17.12" y="0" style="letter-spacing: -.05em;">T</tspan><tspan x="19.84" y="0" style="letter-spacing: 0em;">r</tspan><tspan x="21.82" y="0" style="letter-spacing: 0em;">igge</tspan><tspan x="32.94" y="0" style="letter-spacing: 0em;">r</tspan><tspan x="34.84" y="0">ed </tspan><tspan x="42.5" y="0" style="letter-spacing: 0em;">S</tspan><tspan x="45.48" y="0">ample </tspan><tspan x="62.48" y="0" style="letter-spacing: 0em;">P</tspan><tspan x="65.65" y="0">l</tspan><tspan x="67.06" y="0" style="letter-spacing: 0em;">a</tspan><tspan x="69.91" y="0" style="letter-spacing: -.01em;">y</tspan><tspan x="72.67" y="0">er</tspan></text>
-    <rect id="Screen_DynamicTextDisplay" data-name="Screen#DynamicTextDisplay" x="66.74" y="55.37" width="153.92" height="70.39" style="fill: blue; stroke-width: 0px;"/>
+    <rect id="Screen_STSPDisplay" data-name="Screen#STSPDisplay" x="66.74" y="55.37" width="153.92" height="70.39" style="fill: blue; stroke-width: 0px;"/>
+    <rect id="SampleDir_Root_dir_Samples-1_Samples-2_Samples-3" data-name="SampleDir@Root dir@Samples-1@Samples-2@Samples-3" x="129.5" y="190.83" width="27.67" height="34.05" style="fill: gray; stroke-width: 0px;"/>
   </g>
 </svg>

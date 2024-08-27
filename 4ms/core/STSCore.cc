@@ -2,7 +2,7 @@
 #include "CoreModules/CoreHelper.hh"
 #include "CoreModules/async_thread.hh"
 #include "CoreModules/moduleFactory.hh"
-#include "info/STS_info.hh"
+#include "info/STSP_info.hh"
 #include "sampler/channel_mapping.hh"
 #include "sampler/sampler_channel.hh"
 #include "sampler/src/sts_filesystem.hh"
@@ -15,7 +15,7 @@ namespace MetaModule
 
 class STSCore : public CoreProcessor {
 public:
-	using Info = STSInfo;
+	using Info = STSPInfo;
 	using ThisCore = STSCore;
 	using enum Info::Elem;
 
@@ -64,10 +64,9 @@ public:
 	}
 
 	void set_param(int param_id, float val) override {
-		if (param_id == CoreHelper<Info>::param_index<AltParamStereoMode>()) {
-			settings.stereo_mode = val < 0.5f;
+		settings.stereo_mode = false;
 
-		} else if (param_id == CoreHelper<Info>::param_index<AltParamSampleDir>()) {
+		if (param_id == CoreHelper<Info>::param_index<SampledirAltParam>()) {
 			auto new_index_file = root_name(val);
 			if (new_index_file != root_dir) {
 				root_dir = new_index_file;
@@ -133,6 +132,15 @@ public:
 			return 0.f;
 	}
 
+	size_t get_display_text(int led_id, std::span<char> text) override {
+		std::string chars = "Stereo Triggered Sample Player";
+
+		size_t chars_to_copy = std::min(text.size(), chars.length());
+		std::copy(chars.begin(), std::next(chars.begin(), chars_to_copy), text.begin());
+
+		return chars_to_copy;
+	}
+
 	std::string_view root_name(float val) {
 		unsigned index = std::clamp<unsigned>(std::round(val * 4.f), 0, 3);
 		return sample_root_dirs[index];
@@ -156,67 +164,68 @@ private:
 	float ms_per_update = 1000.f / 48000.f;
 	bool started_fs_thread = false;
 
-	constexpr static uint8_t OutL = CoreHelper<STSInfo>::output_index<OutLOut>();
-	constexpr static uint8_t OutR = CoreHelper<STSInfo>::output_index<OutROut>();
+	// TODO: outputs for each side, normalized to left side
+	constexpr static uint8_t OutL = CoreHelper<Info>::output_index<OutALeftOut>();
+	constexpr static uint8_t OutR = CoreHelper<Info>::output_index<OutALeftOut>();
 
 	constexpr static STSChanMapping MappingL{
-		.PitchKnob = CoreHelper<STSInfo>::param_index<PitchLKnob>(),
-		.SampleKnob = CoreHelper<STSInfo>::param_index<SampleLKnob>(),
-		.StartPosKnob = CoreHelper<STSInfo>::param_index<StartPos_LKnob>(),
-		.LengthKnob = CoreHelper<STSInfo>::param_index<LengthLKnob>(),
-		.PlayButton = CoreHelper<STSInfo>::param_index<PlayLButton>(),
-		.BankButton = CoreHelper<STSInfo>::param_index<BankLButton>(),
-		.ReverseButton = CoreHelper<STSInfo>::param_index<ReverseLButton>(),
-		.PlayTrigIn = CoreHelper<STSInfo>::input_index<PlayTrigLIn>(),
-		.VOctIn = CoreHelper<STSInfo>::input_index<_1V_OctLIn>(),
-		.ReverseTrigIn = CoreHelper<STSInfo>::input_index<ReverseTrigLIn>(),
-		.LengthCvIn = CoreHelper<STSInfo>::input_index<LengthCvLIn>(),
-		.StartPosCvIn = CoreHelper<STSInfo>::input_index<StartPosCvLIn>(),
-		.SampleCvIn = CoreHelper<STSInfo>::input_index<SampleCvLIn>(),
-		.RecIn = CoreHelper<STSInfo>::input_index<LeftRecIn>(),
-		.OutL = OutL,
-		.OutR = OutR,
-		.EndOut = CoreHelper<STSInfo>::output_index<EndOutLOut>(),
-		.PlayLight = CoreHelper<STSInfo>::first_light_index<PlayLLight>(),
-		.PlayButR = CoreHelper<STSInfo>::first_light_index<PlayLButton>() + 0,
-		.PlayButG = CoreHelper<STSInfo>::first_light_index<PlayLButton>() + 1,
-		.PlayButB = CoreHelper<STSInfo>::first_light_index<PlayLButton>() + 2,
-		.RevButR = CoreHelper<STSInfo>::first_light_index<ReverseLButton>() + 0,
-		.RevButG = CoreHelper<STSInfo>::first_light_index<ReverseLButton>() + 1,
-		.RevButB = CoreHelper<STSInfo>::first_light_index<ReverseLButton>() + 2,
-		.BankButR = CoreHelper<STSInfo>::first_light_index<BankLButton>() + 0,
-		.BankButG = CoreHelper<STSInfo>::first_light_index<BankLButton>() + 1,
-		.BankButB = CoreHelper<STSInfo>::first_light_index<BankLButton>() + 2,
+		.PitchKnob = CoreHelper<Info>::param_index<PitchAKnob>(),
+		.SampleKnob = CoreHelper<Info>::param_index<SampleAKnob>(),
+		.StartPosKnob = CoreHelper<Info>::param_index<StartPos_AKnob>(),
+		.LengthKnob = CoreHelper<Info>::param_index<LengthAKnob>(),
+		.PlayButton = CoreHelper<Info>::param_index<PlayAButton>(),
+		.BankPrevButton = CoreHelper<Info>::param_index<PrevBankAButton>(),
+		.BankNextButton = CoreHelper<Info>::param_index<NextBankAButton>(),
+		.ReverseButton = CoreHelper<Info>::param_index<ReverseAButton>(),
+		.PlayTrigIn = CoreHelper<Info>::input_index<PlayTrigAIn>(),
+		.VOctIn = CoreHelper<Info>::input_index<PitchV_OctAIn>(),
+		.ReverseTrigIn = CoreHelper<Info>::input_index<ReverseTrigAIn>(),
+		.LengthCvIn = CoreHelper<Info>::input_index<LengthCvAIn>(),
+		.StartPosCvIn = CoreHelper<Info>::input_index<StartPosCvAIn>(),
+		.SampleCvIn = CoreHelper<Info>::input_index<SampleCvAIn>(),
+		.OutL = CoreHelper<Info>::output_index<OutALeftOut>(),
+		.OutR = CoreHelper<Info>::output_index<OutALeftOut>(),
+		.EndOut = CoreHelper<Info>::output_index<EndOutAOut>(),
+		.PlayLight = CoreHelper<Info>::first_light_index<PlayALight>(),
+		.PlayButR = CoreHelper<Info>::first_light_index<PlayAButton>() + 0,
+		.PlayButG = CoreHelper<Info>::first_light_index<PlayAButton>() + 1,
+		.PlayButB = CoreHelper<Info>::first_light_index<PlayAButton>() + 2,
+		.RevButR = CoreHelper<Info>::first_light_index<ReverseAButton>() + 0,
+		.RevButG = CoreHelper<Info>::first_light_index<ReverseAButton>() + 1,
+		.RevButB = CoreHelper<Info>::first_light_index<ReverseAButton>() + 2,
+		.BankR = CoreHelper<Info>::first_light_index<BankALight>() + 0,
+		.BankG = CoreHelper<Info>::first_light_index<BankALight>() + 1,
+		.BankB = CoreHelper<Info>::first_light_index<BankALight>() + 2,
 	};
 
 	constexpr static STSChanMapping MappingR{
-		.PitchKnob = CoreHelper<STSInfo>::param_index<PitchRKnob>(),
-		.SampleKnob = CoreHelper<STSInfo>::param_index<SampleRKnob>(),
-		.StartPosKnob = CoreHelper<STSInfo>::param_index<StartPos_RKnob>(),
-		.LengthKnob = CoreHelper<STSInfo>::param_index<LengthRKnob>(),
-		.PlayButton = CoreHelper<STSInfo>::param_index<PlayRButton>(),
-		.BankButton = CoreHelper<STSInfo>::param_index<BankRButton>(),
-		.ReverseButton = CoreHelper<STSInfo>::param_index<ReverseRButton>(),
-		.PlayTrigIn = CoreHelper<STSInfo>::input_index<PlayTrigRIn>(),
-		.VOctIn = CoreHelper<STSInfo>::input_index<_1V_OctRIn>(),
-		.ReverseTrigIn = CoreHelper<STSInfo>::input_index<ReverseTrigRIn>(),
-		.LengthCvIn = CoreHelper<STSInfo>::input_index<LengthCvRIn>(),
-		.StartPosCvIn = CoreHelper<STSInfo>::input_index<StartPosCvRIn>(),
-		.SampleCvIn = CoreHelper<STSInfo>::input_index<SampleCvRIn>(),
-		.RecIn = CoreHelper<STSInfo>::input_index<RightRecIn>(),
-		.OutL = OutL,
-		.OutR = OutR,
-		.EndOut = CoreHelper<STSInfo>::output_index<EndOutROut>(),
-		.PlayLight = CoreHelper<STSInfo>::first_light_index<PlayRLight>(),
-		.PlayButR = CoreHelper<STSInfo>::first_light_index<PlayRButton>() + 0,
-		.PlayButG = CoreHelper<STSInfo>::first_light_index<PlayRButton>() + 1,
-		.PlayButB = CoreHelper<STSInfo>::first_light_index<PlayRButton>() + 2,
-		.RevButR = CoreHelper<STSInfo>::first_light_index<ReverseRButton>() + 0,
-		.RevButG = CoreHelper<STSInfo>::first_light_index<ReverseRButton>() + 1,
-		.RevButB = CoreHelper<STSInfo>::first_light_index<ReverseRButton>() + 2,
-		.BankButR = CoreHelper<STSInfo>::first_light_index<BankRButton>() + 0,
-		.BankButG = CoreHelper<STSInfo>::first_light_index<BankRButton>() + 1,
-		.BankButB = CoreHelper<STSInfo>::first_light_index<BankRButton>() + 2,
+		.PitchKnob = CoreHelper<Info>::param_index<PitchBKnob>(),
+		.SampleKnob = CoreHelper<Info>::param_index<SampleBKnob>(),
+		.StartPosKnob = CoreHelper<Info>::param_index<StartPos_BKnob>(),
+		.LengthKnob = CoreHelper<Info>::param_index<LengthBKnob>(),
+		.PlayButton = CoreHelper<Info>::param_index<PlayBButton>(),
+		.BankPrevButton = CoreHelper<Info>::param_index<PrevBankBButton>(),
+		.BankNextButton = CoreHelper<Info>::param_index<NextBankBButton>(),
+		.ReverseButton = CoreHelper<Info>::param_index<ReverseBButton>(),
+		.PlayTrigIn = CoreHelper<Info>::input_index<PlayTrigBIn>(),
+		.VOctIn = CoreHelper<Info>::input_index<PitchV_OctBIn>(),
+		.ReverseTrigIn = CoreHelper<Info>::input_index<ReverseTrigBIn>(),
+		.LengthCvIn = CoreHelper<Info>::input_index<LengthCvBIn>(),
+		.StartPosCvIn = CoreHelper<Info>::input_index<StartPosCvBIn>(),
+		.SampleCvIn = CoreHelper<Info>::input_index<SampleCvBIn>(),
+		.OutL = CoreHelper<Info>::output_index<OutBLeftOut>(),
+		.OutR = CoreHelper<Info>::output_index<OutBLeftOut>(),
+		.EndOut = CoreHelper<Info>::output_index<EndOutBOut>(),
+		.PlayLight = CoreHelper<Info>::first_light_index<PlayBLight>(),
+		.PlayButR = CoreHelper<Info>::first_light_index<PlayBButton>() + 0,
+		.PlayButG = CoreHelper<Info>::first_light_index<PlayBButton>() + 1,
+		.PlayButB = CoreHelper<Info>::first_light_index<PlayBButton>() + 2,
+		.RevButR = CoreHelper<Info>::first_light_index<ReverseBButton>() + 0,
+		.RevButG = CoreHelper<Info>::first_light_index<ReverseBButton>() + 1,
+		.RevButB = CoreHelper<Info>::first_light_index<ReverseBButton>() + 2,
+		.BankR = CoreHelper<Info>::first_light_index<BankBLight>() + 0,
+		.BankG = CoreHelper<Info>::first_light_index<BankBLight>() + 1,
+		.BankB = CoreHelper<Info>::first_light_index<BankBLight>() + 2,
 	};
 
 	SamplerChannel chanL{MappingL, sd, banks, settings, cal_storage};
@@ -228,9 +237,9 @@ private:
 
 	static constexpr std::array<std::string_view, 4> sample_root_dirs = {
 		"",
-		"Samples-1/",
-		"Samples-2/",
-		"Samples-3/",
+		"Samples-1",
+		"Samples-2",
+		"Samples-3",
 	};
 	std::string_view root_dir = sample_root_dirs[0];
 };
