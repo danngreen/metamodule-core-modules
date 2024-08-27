@@ -29,7 +29,7 @@ public:
 			play_buff[i].in = play_buff[i].min;
 			play_buff[i].out = play_buff[i].min;
 
-			play_buff[i].wrapping = 0;
+			play_buff[i].wrapping = false;
 		}
 	}
 
@@ -72,7 +72,10 @@ public:
 		} else if (param_id == mapping.PlayButton) {
 			controls.play_button.sideload_set(val > 0.5f);
 
-		} else if (param_id == mapping.BankButton) {
+			// } else if (param_id == mapping.BankPrevButton) {
+			// 	controls.bank_button.sideload_set(val > 0.5f);
+
+		} else if (param_id == mapping.BankNextButton) {
 			controls.bank_button.sideload_set(val > 0.5f);
 
 		} else if (param_id == mapping.ReverseButton) {
@@ -112,9 +115,6 @@ public:
 		} else if (input_id == mapping.SampleCvIn) {
 			controls.cvs[SamplerKit::SampleCV] = unipolar_cv(volts);
 
-		} else if (input_id == mapping.RecIn) {
-			//not used
-
 		} else
 			return false; //not handled
 
@@ -149,11 +149,11 @@ public:
 		else if (led_id == mapping.PlayButB)
 			return controls.play_led_data.b / 255.f;
 
-		else if (led_id == mapping.BankButR)
+		else if (led_id == mapping.BankR)
 			return controls.bank_led_data.r / 255.f;
-		else if (led_id == mapping.BankButG)
+		else if (led_id == mapping.BankG)
 			return controls.bank_led_data.g / 255.f;
-		else if (led_id == mapping.BankButB)
+		else if (led_id == mapping.BankB)
 			return controls.bank_led_data.b / 255.f;
 
 		else if (led_id == mapping.RevButR)

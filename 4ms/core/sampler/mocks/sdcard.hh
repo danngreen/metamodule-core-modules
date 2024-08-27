@@ -1,6 +1,7 @@
 #pragma once
 #include "CoreModules/fs_access.hh"
 #include "str_util.h"
+#include <string>
 #include <string_view>
 
 namespace SamplerKit
@@ -180,7 +181,7 @@ struct Sdcard : MetaModule::FS {
 
 		for (i = 0; i < FF_MAX_LFN + 1; i++) {
 			firstf_name[i] = 127;
-		} // last possible file name, alphabetically
+		}			  // last possible file name, alphabetically
 		fname[0] = 0; // null string
 
 		//FIXME:

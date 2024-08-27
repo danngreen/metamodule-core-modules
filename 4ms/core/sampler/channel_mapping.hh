@@ -10,7 +10,8 @@ struct STSChanMapping {
 	uint8_t StartPosKnob;
 	uint8_t LengthKnob;
 	uint8_t PlayButton;
-	uint8_t BankButton;
+	uint8_t BankPrevButton;
+	uint8_t BankNextButton;
 	uint8_t ReverseButton;
 	uint8_t PlayTrigIn;
 	uint8_t VOctIn;
@@ -18,7 +19,6 @@ struct STSChanMapping {
 	uint8_t LengthCvIn;
 	uint8_t StartPosCvIn;
 	uint8_t SampleCvIn;
-	uint8_t RecIn;
 	uint8_t OutL;
 	uint8_t OutR;
 	uint8_t EndOut;
@@ -29,9 +29,9 @@ struct STSChanMapping {
 	uint8_t RevButR;
 	uint8_t RevButG;
 	uint8_t RevButB;
-	uint8_t BankButR;
-	uint8_t BankButG;
-	uint8_t BankButB;
+	uint8_t BankR;
+	uint8_t BankG;
+	uint8_t BankB;
 };
 
 } // namespace MetaModule
