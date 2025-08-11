@@ -195,11 +195,21 @@ public:
 										   total ? (float)stream.latest_buffered_frame() / total : 0);
 	}
 
+	uint32_t auto_played_tm = 0xFFFFFFFF;
+
 	void handle_play() {
 		play_button.process(getState<PlayButton>() == MomentaryButton::State_t::PRESSED);
 		play_jack.process(getInput<PlayTrigIn>().value_or(0));
 
-		if (play_button.just_went_high() || play_jack.just_went_high()) {
+		// stagger by 250ms, starting with 2 seconds
+		if (auto_played_tm == 0xFFFFFFFF)
+			auto_played_tm = 96000 + id * 12000;
+
+		if (auto_played_tm > 0)
+			auto_played_tm--;
+
+		if (auto_played_tm == 1 || play_button.just_went_high() || play_jack.just_went_high()) {
+			auto_played_tm = 0;
 
 			if (play_state == PlayState::Stopped && stream.is_loaded()) {
 				restart_playback();
