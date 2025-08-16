@@ -171,13 +171,22 @@ public:
 			file_error_retry.start(0.5f);
 		}
 
+		if (should_unload) {
+			stream.unload();
+			play_state = Stopped;
+			sample_filename.copy("");
+			play_state = PlayState::Stopped;
+			Patch::mark_patch_modified();
+			should_unload = false;
+		}
+
 		if (play_state == Playing) {
 			setLED<PlayButton>(Green);
 			waveform.set_wave_color(Teal);
 
 		} else if (play_state == Paused) {
 			setLED<PlayButton>(Off);
-			waveform.set_wave_color(Teal);
+			waveform.set_wave_color(stream.frames_available() < prebuff_threshold() ? Yellow : Teal);
 
 		} else if (play_state == FileError) {
 			setLED<PlayButton>(Red);
@@ -252,6 +261,10 @@ public:
 		// Load Sample: process it and then set the param back to 0
 		if (id == param_idx<LoadSampleAltParam> && val == 1) {
 			handle_load_button();
+			SmartCoreProcessor::set_param(id, 0);
+		}
+		if (id == param_idx<UnloadSampleAltParam> && val == 1) {
+			should_unload = true;
 			SmartCoreProcessor::set_param(id, 0);
 		}
 	}
@@ -383,6 +396,7 @@ private:
 	enum class PlayState { Stopped, LoadSampleInfo, Buffering, Playing, Paused, Restart, FileError };
 	std::atomic<PlayState> play_state{PlayState::Stopped};
 	bool immediate_play = false;
+	bool should_unload = true;
 
 	Toggler play_button;
 	cpputil::SchmittTrigger play_jack{0.2f, 0.5f};
